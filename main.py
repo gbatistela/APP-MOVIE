@@ -71,3 +71,35 @@ def cantidad_filmaciones_dia( Dia :str):
     return f"{count} cantidad de películas fueron estrenadas en los días {Dia}"
 
 
+def score_titulo( titulo:str ):
+
+    # Buscar la película por el título
+    pelicula = df_movies[df_movies['title'].str.lower() == titulo.lower()]
+
+    # Extraer el título, el año y el score
+    titulo = pelicula['title'].values[0]
+    anio = pelicula['release_year'].values[0]
+    score = pelicula['vote_average'].values[0]
+
+    return f"La película {titulo} fue estrenada en el año {anio} con un score/popularidad de {score}"
+
+
+def votos_titulo( titulo:str ):
+
+    # Buscar la película por el título
+    pelicula = df_movies[df_movies['title'].str.lower() == titulo.lower()]
+
+    # Contar la cantidad de votos
+    votos = pelicula["vote_count"].values[0]
+    if votos >= 2000:
+
+        # Extraer el título, el año y el score
+        titulo= pelicula['title'].values[0]
+        cantidad_votos = pelicula["vote_count"].values[0]
+        promedio_votos = pelicula['vote_average'].values[0]
+        año = pelicula["release_year"].values[0]
+
+        return f"La película {titulo} fue estrenada en el año {año}. La misma cuenta con un total de {cantidad_votos} valoraciones, con un promedio de {promedio_votos}"
+    
+    else:
+        return f"La película {titulo} no cumple con las condiciones de superar los 2000 votos"
