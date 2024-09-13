@@ -1,21 +1,19 @@
 import pandas as pd
+import numpy as np
 from typing import Union
 from fastapi import FastAPI
 
 app = FastAPI()
 
-df_movies= pd.read_csv("df_movies.csv")
+df_movies= pd.read_csv("df_movies.csv",low_memory=False)
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
 
-@app.get("/Cantida de filmaciones")
+@app.get("/Cantidad de filmaciones mes")
 def cantidad_filmaciones_mes(mes:str):
     # Diccionario de meses en español
     meses = {
@@ -70,7 +68,7 @@ def cantidad_filmaciones_dia( Dia :str):
 
     return f"{count} cantidad de películas fueron estrenadas en los días {Dia}"
 
-
+@app.get("/score_titulo")
 def score_titulo( titulo:str ):
 
     # Buscar la película por el título
@@ -83,7 +81,7 @@ def score_titulo( titulo:str ):
 
     return f"La película {titulo} fue estrenada en el año {anio} con un score/popularidad de {score}"
 
-
+@app.get("/votos_titulo")
 def votos_titulo( titulo:str ):
 
     # Buscar la película por el título
@@ -103,3 +101,62 @@ def votos_titulo( titulo:str ):
     
     else:
         return f"La película {titulo} no cumple con las condiciones de superar los 2000 votos"
+
+
+@app.get("/get_actor")
+def get_actor(nombre_actor):
+    # Filtrar el DataFrame para obtener solo las filas donde el actor está en el cast
+    df_actor = df_movies[df_movies['name.3'] == nombre_actor]
+    
+    # Contar el número de películas en las que ha participado
+    cantidad_peliculas = df_actor.shape[0]
+    
+    # Filtrar para obtener solo las películas con retorno de inversión válido
+    df_actor = df_actor[
+        (df_actor['retorno_de_inversion'] != np.inf) &  # Excluir infinito
+        (df_actor['retorno_de_inversion'] != -np.inf) &  # Excluir -infinito
+        (df_actor['retorno_de_inversion'].notna()) &  # Excluir NaN
+        (df_actor['retorno_de_inversion'] >= 0)  # Asegurarse de que el valor sea positivo
+    ]
+    
+    # Calcular el promedio de retorno de inversión
+    promedio_retorno = df_actor['retorno_de_inversion'].mean() if cantidad_peliculas > 0 else 0
+    retorno_inversion =df_actor["retorno_de_inversion"].sum() 
+
+    
+    return f"El actor {nombre_actor} participado de {cantidad_peliculas} de filmaciones, el mismo ha obtenido un retorno de {retorno_inversion} un promedio de {promedio_retorno:.2f} filmación"
+
+
+
+@app.get("/get_director")
+def get_director(nombre_director):
+    # Filtrar el dataframe por el nombre del director
+    director_df = df_movies[df_movies['name.2'] == nombre_director]
+    
+    # Filtrar para obtener solo las películas con retorno de inversión válido
+    director_df = director_df[
+        (director_df['retorno_de_inversion'] != np.inf) &  # Excluir infinito
+        (director_df['retorno_de_inversion'] != -np.inf) &  # Excluir -infinito
+        (director_df['retorno_de_inversion'].notna()) &  # Excluir NaN
+        (director_df['retorno_de_inversion'] >= 0)  # Asegurarse de que el valor sea positivo
+    ]
+
+    # Calcular el retorno total (éxito)
+    retorno_total = director_df['retorno_de_inversion'].sum()
+    
+    # Crear una lista de diccionarios con la información de cada película
+    peliculas_info = []
+    for _, row in director_df.iterrows():
+        peliculas_info.append({
+            'titulo': row['title'],
+            'fecha_lanzamiento': row['release_year'],
+            'retorno_individual': row['retorno_de_inversion'],
+            'costo': row['budget'],
+            'ganancia': row['revenue']
+        })
+    
+    return {
+        'nombre_director': nombre_director,
+        'retorno_total': retorno_total,
+        'peliculas': peliculas_info
+    }
