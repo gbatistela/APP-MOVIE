@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 from typing import Union
 from fastapi import FastAPI
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
 
 df_movies= pd.read_csv("df_movies.csv",low_memory=False)
 
-@app.get("/")
+@app.get("/Proyecto Veronica van Vugt")
 def read_root():
     return {"Hello": "World"}
 
@@ -106,7 +107,7 @@ def votos_titulo( titulo:str ):
 @app.get("/get_actor")
 def get_actor(nombre_actor):
     # Filtrar el DataFrame para obtener solo las filas donde el actor está en el cast
-    df_actor = df_movies[df_movies['name.3'] == nombre_actor]
+    df_actor = df_movies[df_movies['actor'] == nombre_actor]
     
     # Contar el número de películas en las que ha participado
     cantidad_peliculas = df_actor.shape[0]
@@ -130,8 +131,11 @@ def get_actor(nombre_actor):
 
 @app.get("/get_director")
 def get_director(nombre_director):
+    
     # Filtrar el dataframe por el nombre del director
-    director_df = df_movies[df_movies['name.2'] == nombre_director]
+    df_director= pd.DataFrame(df_movies[["director","retorno_de_inversion","release_year","title","revenue","budget"]])
+
+    director_df = df_movies[df_movies['director'] == nombre_director]
     
     # Filtrar para obtener solo las películas con retorno de inversión válido
     director_df = director_df[
@@ -160,3 +164,37 @@ def get_director(nombre_director):
         'retorno_total': retorno_total,
         'peliculas': peliculas_info
     }
+
+
+    @app.get("/Recomendacion_juego")
+    def Recomendacion_juego(pelicula:str):
+    
+
+        # Filtrar por películas lanzadas desde 2017
+        df_movies_filtered = df_movies[df_movies['release_year'] >= 2017]
+
+        # Crear una matriz de usuario-item
+        user_item_matrix = pd.pivot_table(df_movies_filtered, values='vote_average', index='movie_id', columns='title', fill_value=0)
+
+        # Calcular la similitud de coseno entre peliculas
+        peliculas_similares = cosine_similarity(user_item_matrix.T)
+
+        # Encontrar el índice del juego en la matriz
+        peliculas_index = user_item_matrix.columns.get_loc(pelicula)
+        
+
+        # Calcular la similitud de coseno entre el juego deseado y otros juegos
+        peliculas_similares = peliculas_similares[peliculas_index] 
+
+        # Crear un DataFrame con juegos similares y sus similitudes
+        similar_peliculas = pd.DataFrame({
+            'Peliculas': user_item_matrix.columns,
+            'Similarity': peliculas_similares
+        })
+
+        # Ordenar los juegos por similitud en orden descendente
+        top_5_recomendadas = similar_peliculas.sort_values(by='Similarity', ascending=False).head(5)
+
+        
+        
+        return top_5_recomendadas
