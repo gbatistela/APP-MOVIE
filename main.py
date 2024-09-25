@@ -4,7 +4,7 @@ from typing import Union
 from fastapi import FastAPI
 from sklearn.metrics.pairwise import cosine_similarity
 
-app = FastAPI()
+app = FastAPI() 
 
 df_movies= pd.read_csv("df_movies.csv",low_memory=False)
 
@@ -166,8 +166,8 @@ def get_director(nombre_director):
     }
 
 
-    @app.get("/Recomendacion_juego")
-    def Recomendacion_juego(pelicula:str):
+@app.get("/Recomendacion_juego")
+def Recomendacion_juego(pelicula:str):
     
 
         # Filtrar por películas lanzadas desde 2017
@@ -189,12 +189,10 @@ def get_director(nombre_director):
         # Crear un DataFrame con juegos similares y sus similitudes
         similar_peliculas = pd.DataFrame({
             'Peliculas': user_item_matrix.columns,
-            'Similarity': peliculas_similares
+            'Similarity' : peliculas_similares
         })
 
         # Ordenar los juegos por similitud en orden descendente
         top_5_recomendadas = similar_peliculas.sort_values(by='Similarity', ascending=False).head(5)
 
-        
-        
         return top_5_recomendadas
