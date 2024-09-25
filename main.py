@@ -8,7 +8,7 @@ app = FastAPI()
 
 df_movies= pd.read_csv("df_movies.csv",low_memory=False)
 
-@app.get("/Proyecto Veronica van Vugt")
+@app.get("/Proyecto Giuliano Batistela")
 def read_root():
     return {"Hello": "World"}
 
